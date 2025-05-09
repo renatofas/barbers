@@ -1,11 +1,20 @@
 const { createAppointment, getAppointments } = require('../models/appointmentModel');
 const { findUserByEmail } = require('../models/userModel');
+const db = require('../models/db');
 
 async function scheduleAppointment(req, res) {
   const { email, dateTime, cutOption } = req.body;
   try {
     const user = await findUserByEmail(email);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const [existing] = await db.query(
+      'SELECT * FROM appointments WHERE date_time = ?',
+      [dateTime]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ message: 'Hora ya ocupada' });
+    }
 
     const appointmentId = await createAppointment(user.id, dateTime, cutOption);
     res.status(201).json({ message: 'Cita agendada', appointmentId });

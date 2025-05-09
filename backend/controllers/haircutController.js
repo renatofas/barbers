@@ -1,27 +1,35 @@
-const { findUserByRUT } = require('../models/userModel');
-const { registerHaircut, getHaircutsByRUT } = require('../models/haircutModel');
+const db = require('../models/db');
 
-async function uploadHaircut(req, res) {
-  const { rut, imageUrl, description, dateTime } = req.body;
+async function saveHaircut(req, res) {
+  const { email, image, description } = req.body;
+
+  console.log('📩 Datos recibidos:', {
+    email,
+    imageLength: image ? image.length : 0,
+    description,
+  });
+
   try {
-    const user = await findUserByRUT(rut);
-    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+    const [userRow] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    console.log('👤 Resultado búsqueda de usuario:', userRow);
 
-    const haircutId = await registerHaircut(user.id, imageUrl, description, dateTime);
-    res.status(201).json({ message: 'Corte registrado', haircutId });
+    if (!userRow.length) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const userId = userRow[0].id;
+
+    await db.query(
+      'INSERT INTO haircuts (user_id, image_base64, description, created_at) VALUES (?, ?, ?, NOW())',
+      [userId, image, description]
+    );
+
+    console.log('✅ Corte guardado correctamente');
+    res.status(201).json({ message: 'Corte guardado exitosamente' });
   } catch (err) {
-    res.status(500).json({ message: 'Error al registrar corte', error: err.message });
+    console.error('❌ Error en saveHaircut:', err.message);
+    res.status(500).json({ message: 'Error al guardar corte', error: err.message });
   }
 }
 
-async function listHaircuts(req, res) {
-  const { rut } = req.params;
-  try {
-    const cuts = await getHaircutsByRUT(rut);
-    res.json(cuts);
-  } catch (err) {
-    res.status(500).json({ message: 'Error al obtener cortes', error: err.message });
-  }
-}
-
-module.exports = { uploadHaircut, listHaircuts };
+module.exports = { saveHaircut };

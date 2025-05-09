@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API = process.env.REACT_APP_API || 'http://localhost:3001';
+
 const availableTimes = [
   '09:00', '10:00', '11:00', '12:00',
   '14:00', '15:00', '16:00', '17:00'
@@ -16,10 +18,13 @@ function BookingCalendar() {
     const fetchBookedTimes = async () => {
       if (!selectedDate) return;
       try {
-        const res = await axios.get('http://localhost:3001/api/appointments');
+        const res = await axios.get(`${API}/api/appointments`);
         const times = res.data
           .filter(a => a.date_time.startsWith(selectedDate))
-          .map(a => a.date_time.split('T')[1].slice(0, 5));
+          .map(a => {
+            const localTime = new Date(a.date_time);
+            return localTime.toTimeString().slice(0, 5); // Formato HH:MM
+          });
         setBookedTimes(times);
       } catch (err) {
         console.error('Error al obtener citas', err);
@@ -32,14 +37,13 @@ function BookingCalendar() {
     e.preventDefault();
     if (!selectedDate || !selectedTime) return alert('Selecciona fecha y hora');
     try {
-      const userRes = await axios.post('http://localhost:3001/api/auth/register', {
+      await axios.post(`${API}/api/auth/register`, {
         name: form.name,
         email: form.email,
-        rut: form.email, // Se usa email como identificador temporal
         password: '123456'
       });
-      await axios.post('http://localhost:3001/api/appointments', {
-        rut: form.email, // Se usa email como identificador temporal
+      await axios.post(`${API}/api/appointments`, {
+        email: form.email,
         dateTime: `${selectedDate}T${selectedTime}`,
         cutOption: 'Sin especificar'
       });
@@ -47,7 +51,12 @@ function BookingCalendar() {
       setSelectedTime('');
       setForm({ name: '', email: '' });
     } catch (err) {
-      alert('Error al agendar cita');
+      if (err.response?.status === 409 && err.response?.data?.message === 'Hora ya ocupada') {
+        alert('Esa hora ya está ocupada. Por favor elige otra.');
+      } else {
+        console.error(err.response?.data || err);
+        alert('Error al agendar cita');
+      }
     }
   };
 
