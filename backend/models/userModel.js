@@ -1,16 +1,16 @@
 const db = require('./db');
 
-async function findUserByRUT(rut) {
-  const [rows] = await db.query('SELECT * FROM users WHERE rut = ?', [rut]);
+async function findUserByEmail(email) {
+  const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
   return rows[0];
 }
 
-async function createUser(name, email, rut, passwordHash) {
+async function createUser(name, email, passwordHash) {
   const [result] = await db.query(
-    'INSERT INTO users (name, email, rut, password_hash) VALUES (?, ?, ?, ?)',
-    [name, email, rut, passwordHash]
+    'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+    [name, email, passwordHash]
   );
   return result.insertId;
 }
 
-module.exports = { findUserByRUT, createUser };
+module.exports = { findUserByEmail, createUser };

@@ -9,7 +9,7 @@ const availableTimes = [
 function BookingCalendar() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [form, setForm] = useState({ name: '', email: '', rut: '' });
+  const [form, setForm] = useState({ name: '', email: '' });
   const [bookedTimes, setBookedTimes] = useState([]);
 
   useEffect(() => {
@@ -32,20 +32,20 @@ function BookingCalendar() {
     e.preventDefault();
     if (!selectedDate || !selectedTime) return alert('Selecciona fecha y hora');
     try {
-      await axios.post('http://localhost:3001/api/auth/register', {
+      const userRes = await axios.post('http://localhost:3001/api/auth/register', {
         name: form.name,
         email: form.email,
-        rut: form.rut,
+        rut: form.email, // Se usa email como identificador temporal
         password: '123456'
       });
       await axios.post('http://localhost:3001/api/appointments', {
-        rut: form.rut,
+        rut: form.email, // Se usa email como identificador temporal
         dateTime: `${selectedDate}T${selectedTime}`,
         cutOption: 'Sin especificar'
       });
       alert('Cita agendada con éxito');
       setSelectedTime('');
-      setForm({ name: '', email: '', rut: '' });
+      setForm({ name: '', email: '' });
     } catch (err) {
       alert('Error al agendar cita');
     }
@@ -58,8 +58,7 @@ function BookingCalendar() {
   const availableSlots = availableTimes.filter(time => {
     if (bookedTimes.includes(time)) return false;
     if (isToday) {
-      const [hour, minute] = time.split(':').map(Number);
-      const slotTime = new Date(selectedDate + 'T' + time);
+      const slotTime = new Date(`${selectedDate}T${time}`);
       return slotTime.getTime() > now.getTime();
     }
     return true;
@@ -97,7 +96,6 @@ function BookingCalendar() {
           <h4>Formulario:</h4>
           <input type="text" name="name" placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           <input type="email" name="email" placeholder="Correo" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-          <input type="text" name="rut" placeholder="RUT" value={form.rut} onChange={e => setForm({ ...form, rut: e.target.value })} required />
           <button type="submit">Agendar</button>
         </form>
       )}

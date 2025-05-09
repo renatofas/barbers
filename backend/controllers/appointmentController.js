@@ -1,10 +1,10 @@
 const { createAppointment, getAppointments } = require('../models/appointmentModel');
-const { findUserByRUT } = require('../models/userModel');
+const { findUserByEmail } = require('../models/userModel');
 
 async function scheduleAppointment(req, res) {
-  const { rut, dateTime, cutOption } = req.body;
+  const { email, dateTime, cutOption } = req.body;
   try {
-    const user = await findUserByRUT(rut);
+    const user = await findUserByEmail(email);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
     const appointmentId = await createAppointment(user.id, dateTime, cutOption);

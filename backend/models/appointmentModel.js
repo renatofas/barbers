@@ -10,7 +10,7 @@ async function createAppointment(userId, dateTime, cutOption) {
 
 async function getAppointments() {
   const [rows] = await db.query(
-    'SELECT a.id, u.name, u.rut, a.date_time, a.cut_option FROM appointments a JOIN users u ON a.user_id = u.id ORDER BY a.date_time'
+    'SELECT a.id, u.name, u.email, a.date_time, a.cut_option FROM appointments a JOIN users u ON a.user_id = u.id ORDER BY a.date_time'
   );
   return rows;
 }
