@@ -3,50 +3,67 @@ import axios from 'axios';
 
 const availableTimes = [
   '09:00', '10:00', '11:00', '12:00',
-  '14:00', '15:00', '16:00', '17:00'
+  '13:00', '14:00', '15:00', '16:00', '17:00'
 ];
 
-function BookingCalendar() {
+function BookingCalendar({ selectedService, goBack }) {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
-  const [bookedTimes, setBookedTimes] = useState([]);
+  const [bookedHours, setBookedHours] = useState([]);
+
+  const isLongService = selectedService.name.includes('Barba') || selectedService.name.includes('VISAGISTA');
 
   useEffect(() => {
-    const fetchBookedTimes = async () => {
+    const fetchBookedHours = async () => {
       if (!selectedDate) return;
+
       try {
         const res = await axios.get('http://localhost:3001/api/appointments');
-        const times = res.data
-          .filter(a => a.date_time.startsWith(selectedDate))
-          .map(a => a.date_time.split('T')[1].slice(0, 5));
-        setBookedTimes(times);
+        const sameDay = res.data.filter(a =>
+          a.date_time && a.date_time.startsWith(selectedDate)
+        );
+
+        const hours = sameDay.map(a =>
+          a.date_time.split('T')[1].slice(0, 5) // → "HH:MM"
+        );
+
+        setBookedHours(hours);
       } catch (err) {
-        console.error('Error al obtener citas', err);
+        console.error('Error al obtener citas:', err);
       }
     };
-    fetchBookedTimes();
+
+    fetchBookedHours();
   }, [selectedDate]);
 
   const handleSubmit = async e => {
     e.preventDefault();
     if (!selectedDate || !selectedTime) return alert('Selecciona fecha y hora');
+
     try {
-      const userRes = await axios.post('http://localhost:3001/api/auth/register', {
+      await axios.post('http://localhost:3001/api/auth/register', {
         name: form.name,
         email: form.email,
         phone: form.phone
       });
+
       await axios.post('http://localhost:3001/api/appointments', {
         email: form.email,
         dateTime: `${selectedDate}T${selectedTime}`,
-        cutOption: 'Sin especificar'
+        cut_option: selectedService.name
       });
+
       alert('Cita agendada con éxito');
       setSelectedTime('');
       setForm({ name: '', email: '', phone: '' });
     } catch (err) {
-      alert('Error al agendar cita');
+      if (err.response?.status === 409) {
+        alert('Ese horario ya está ocupado.');
+      } else {
+        alert('Error al agendar cita');
+        console.error(err);
+      }
     }
   };
 
@@ -54,18 +71,33 @@ function BookingCalendar() {
   const now = new Date();
   const isToday = selectedDate === today;
 
-  const availableSlots = availableTimes.filter(time => {
-    if (bookedTimes.includes(time)) return false;
-    if (isToday) {
-      const slotTime = new Date(`${selectedDate}T${time}`);
-      return slotTime.getTime() > now.getTime();
+  const availableSlots = availableTimes.filter((time, index) => {
+    if (!selectedDate) return false;
+
+    const [hour] = time.split(':').map(Number);
+
+    const timeDate = new Date(`${selectedDate}T${time}`);
+    if (isToday && timeDate < now) return false;
+
+    const isTaken = bookedHours.includes(time);
+
+    // Si el servicio es largo, también bloquea la hora anterior
+    if (isLongService) {
+      const nextHour = `${String(hour + 1).padStart(2, '0')}:00`;
+      const prevHour = `${String(hour - 1).padStart(2, '0')}:00`;
+      if (bookedHours.includes(prevHour) || bookedHours.includes(time)) return false;
+    } else {
+      if (isTaken) return false;
     }
+
     return true;
   });
 
   return (
     <div>
-      <h2>Agendar Corte de Pelo</h2>
+      <h2>{selectedService.name}</h2>
+      <p>{selectedService.duration} · {selectedService.price}</p>
+
       <input
         type="date"
         value={selectedDate}
@@ -76,6 +108,7 @@ function BookingCalendar() {
         }}
         required
       />
+
       {selectedDate && (
         <div>
           <h4>Horas disponibles:</h4>
@@ -83,22 +116,68 @@ function BookingCalendar() {
             <button
               key={time}
               onClick={() => setSelectedTime(time)}
-              style={{ margin: '5px', backgroundColor: selectedTime === time ? '#ccc' : '' }}
+              className={`time-btn ${selectedTime === time ? 'selected' : ''}`}
+              style={{
+                margin: '5px',
+                padding: '10px',
+                borderRadius: '6px',
+                backgroundColor: selectedTime === time ? '#2196f3' : '#333',
+                color: 'white',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
               {time}
             </button>
           )) : <p>No hay horas disponibles</p>}
         </div>
       )}
+
       {selectedTime && (
         <form onSubmit={handleSubmit}>
           <h4>Formulario:</h4>
-          <input type="text" name="name" placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-          <input type="email" name="email" placeholder="Correo" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-          <input type="tel" name="phone" placeholder="Teléfono" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
+          <input
+            type="text"
+            name="name"
+            placeholder="Nombre"
+            value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })}
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Correo"
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
+            required
+          />
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Teléfono"
+            value={form.phone}
+            onChange={e => setForm({ ...form, phone: e.target.value })}
+            required
+            style={{
+              width: '100%',
+              padding: '10px',
+              marginTop: '10px',
+              marginBottom: '16px',
+              backgroundColor: '#2a2a2a',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#fff',
+              fontSize: '1rem'
+            }}
+          />
           <button type="submit">Agendar</button>
         </form>
       )}
+
+      <button onClick={goBack} style={{ marginTop: '1rem' }}>
+        ← Volver
+      </button>
     </div>
   );
 }
