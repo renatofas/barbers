@@ -7,7 +7,7 @@ function HaircutHistory() {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(\`http://localhost:3001/api/haircuts/\${rut}\`);
+      const res = await axios.get(`http://localhost:3001/api/haircuts/${rut}`);
       setCuts(res.data);
     } catch {
       alert('Error al obtener historial');
