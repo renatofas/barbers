@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API = process.env.REACT_APP_API || 'http://localhost:3001';
-
 const availableTimes = [
   '09:00', '10:00', '11:00', '12:00',
   '14:00', '15:00', '16:00', '17:00'
@@ -11,20 +9,17 @@ const availableTimes = [
 function BookingCalendar() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [form, setForm] = useState({ name: '', email: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [bookedTimes, setBookedTimes] = useState([]);
 
   useEffect(() => {
     const fetchBookedTimes = async () => {
       if (!selectedDate) return;
       try {
-        const res = await axios.get(`${API}/api/appointments`);
+        const res = await axios.get('http://localhost:3001/api/appointments');
         const times = res.data
           .filter(a => a.date_time.startsWith(selectedDate))
-          .map(a => {
-            const localTime = new Date(a.date_time);
-            return localTime.toTimeString().slice(0, 5); // Formato HH:MM
-          });
+          .map(a => a.date_time.split('T')[1].slice(0, 5));
         setBookedTimes(times);
       } catch (err) {
         console.error('Error al obtener citas', err);
@@ -37,26 +32,21 @@ function BookingCalendar() {
     e.preventDefault();
     if (!selectedDate || !selectedTime) return alert('Selecciona fecha y hora');
     try {
-      await axios.post(`${API}/api/auth/register`, {
+      const userRes = await axios.post('http://localhost:3001/api/auth/register', {
         name: form.name,
         email: form.email,
-        password: '123456'
+        phone: form.phone
       });
-      await axios.post(`${API}/api/appointments`, {
+      await axios.post('http://localhost:3001/api/appointments', {
         email: form.email,
         dateTime: `${selectedDate}T${selectedTime}`,
         cutOption: 'Sin especificar'
       });
       alert('Cita agendada con éxito');
       setSelectedTime('');
-      setForm({ name: '', email: '' });
+      setForm({ name: '', email: '', phone: '' });
     } catch (err) {
-      if (err.response?.status === 409 && err.response?.data?.message === 'Hora ya ocupada') {
-        alert('Esa hora ya está ocupada. Por favor elige otra.');
-      } else {
-        console.error(err.response?.data || err);
-        alert('Error al agendar cita');
-      }
+      alert('Error al agendar cita');
     }
   };
 
@@ -105,6 +95,7 @@ function BookingCalendar() {
           <h4>Formulario:</h4>
           <input type="text" name="name" placeholder="Nombre" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           <input type="email" name="email" placeholder="Correo" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+          <input type="tel" name="phone" placeholder="Teléfono" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
           <button type="submit">Agendar</button>
         </form>
       )}
