@@ -7,6 +7,7 @@
     "axios": "^1.6.0",
     "core-js-pure": "^3.42.0",
     "react": "^18.2.0",
+    "react-datepicker": "^8.3.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1"
   },
