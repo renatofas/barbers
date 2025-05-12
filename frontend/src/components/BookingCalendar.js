@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
@@ -53,7 +54,8 @@ function BookingCalendar({ selectedService, goBack }) {
       await axios.post('http://localhost:3001/api/appointments', {
         email: form.email,
         dateTime: `${formattedDate}T${selectedTime}`,
-        cut_option: selectedService.name
+        cut_option: selectedService.name,
+        durationHours: selectedService.durationHours || 1
       });
 
       alert('Cita agendada con éxito');
@@ -72,12 +74,36 @@ function BookingCalendar({ selectedService, goBack }) {
   const today = new Date();
   const isToday = selectedDate.toDateString() === today.toDateString();
 
-  const availableSlots = availableTimes.filter(time => {
-    if (bookedTimes.includes(time)) return false;
+  const dayClassName = date => {
+    const today = new Date();
+    const dayISO = date.toISOString().split('T')[0];
+
+    if (date.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0)) {
+      return 'past-day';
+    }
+
+    const hasAvailable = availableTimes.some(time => {
+      const slot = new Date(`${dayISO}T${time}`);
+      return !bookedTimes.includes(time) && slot > new Date();
+    });
+
+    return hasAvailable ? '' : 'no-availability';
+  };
+
+  const serviceDuration = selectedService.durationHours || 1;
+
+  const availableSlots = availableTimes.filter((time, index, array) => {
+    const requiredSlots = array.slice(index, index + serviceDuration);
+    if (requiredSlots.length < serviceDuration) return false;
+
+    const anyTaken = requiredSlots.some(t => bookedTimes.includes(t));
+    if (anyTaken) return false;
+
     if (isToday) {
       const slotTime = new Date(`${formattedDate}T${time}`);
-      return slotTime > new Date();
+      if (slotTime <= new Date()) return false;
     }
+
     return true;
   });
 
@@ -96,6 +122,7 @@ function BookingCalendar({ selectedService, goBack }) {
             setSelectedTime('');
           }}
           inline
+          dayClassName={dayClassName}
           minDate={new Date()}
         />
         <div className="timezone-label">Zona horaria: Chile – Santiago</div>

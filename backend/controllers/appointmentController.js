@@ -1,61 +1,47 @@
-const { createAppointment, getAppointments } = require('../models/appointmentModel');
+
 const { findUserByEmail } = require('../models/userModel');
-const db = require('../models/db');
+const { createAppointment, getAppointments } = require('../models/appointmentModel');
 
-async function scheduleAppointment(req, res) {
-  const { email, dateTime, cut_option } = req.body;
-
+const scheduleAppointment = async (req, res) => {
   try {
+    const { email, dateTime, cut_option, durationHours } = req.body;
+
     const user = await findUserByEmail(email);
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-    const serviceDurations = {
-      'Corte de cabello ADULTO': 60,
-      'Corte de cabello más Barba': 80,
-      'Corte de cabello más Asesoría VISAGISTA': 95,
-      'Corte de cabello NIÑO': 60,
-      'Arreglo de barba': 60,
-    };
+    await createAppointment(user.id, dateTime, cut_option);
 
-    const appointmentStart = new Date(dateTime);
-    const durationMinutes = serviceDurations[cut_option] || 60;
-    const appointmentEnd = new Date(appointmentStart.getTime() + durationMinutes * 60000);
+    // Calcular correctamente las horas siguientes
+    const hoursToBlock = parseInt(durationHours) || 1;
+    const [datePart, timePart] = dateTime.split('T');
+    const [hour, minute] = timePart.split(':');
+    const baseHour = parseInt(hour, 10);
 
-    const [conflicts] = await db.query(
-      `SELECT * FROM appointments
-       WHERE date_time < ?
-       AND DATE_ADD(date_time, INTERVAL 
-         CASE cut_option
-           WHEN 'Corte de cabello ADULTO' THEN 60
-           WHEN 'Corte de cabello más Barba' THEN 80
-           WHEN 'Corte de cabello más Asesoría VISAGISTA' THEN 95
-           WHEN 'Corte de cabello NIÑO' THEN 60
-           WHEN 'Arreglo de barba' THEN 60
-         ELSE 60
-         END MINUTE
-       ) > ?`,
-      [appointmentEnd, appointmentStart]
-    );
-
-    if (conflicts.length > 0) {
-      return res.status(409).json({ message: 'Ese horario se solapa con otra cita' });
+    for (let i = 1; i < hoursToBlock; i++) {
+      const nextHour = baseHour + i;
+      const paddedHour = String(nextHour).padStart(2, '0');
+      const nextSlot = `${datePart}T${paddedHour}:${minute}:00`;
+      await createAppointment(user.id, nextSlot, `${cut_option} (bloqueo)`);
     }
 
-    const appointmentId = await createAppointment(user.id, dateTime, cut_option);
-    res.status(201).json({ message: 'Cita agendada', appointmentId });
-
+    res.status(201).json({ message: 'Cita agendada' });
   } catch (err) {
-    res.status(500).json({ message: 'Error al agendar cita', error: err.message });
+    console.error('Error al agendar cita:', err);
+    res.status(500).json({ message: 'Error al agendar cita' });
   }
-}
+};
 
-async function listAppointments(req, res) {
+const listAppointments = async (req, res) => {
   try {
     const appointments = await getAppointments();
     res.json(appointments);
   } catch (err) {
-    res.status(500).json({ message: 'Error al obtener citas', error: err.message });
+    console.error('Error al listar citas:', err);
+    res.status(500).json({ message: 'Error al listar citas' });
   }
-}
+};
 
-module.exports = { scheduleAppointment, listAppointments };
+module.exports = {
+  scheduleAppointment,
+  listAppointments
+};

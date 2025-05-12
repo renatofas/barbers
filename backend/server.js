@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 const authRoutes = require('./routes/authRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const haircutRoutes = require('./routes/haircutRoutes');
-
+const reviewRoutes = require('./routes/reviewRoutes');
 
 
 dotenv.config();
@@ -12,6 +12,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/haircuts', haircutRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
