@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 function HaircutHistory() {
-  const [rut, setRUT] = useState('');
+  const [email, setEmail] = useState('');
   const [cuts, setCuts] = useState([]);
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/haircuts/${rut}`);
+      const res = await axios.get(`http://localhost:3001/api/haircuts/${email}`);
       setCuts(res.data);
     } catch {
       alert('Error al obtener historial');
@@ -16,14 +16,20 @@ function HaircutHistory() {
 
   return (
     <div>
-      <input type="text" placeholder="RUT" value={rut} onChange={e => setRUT(e.target.value)} />
+      <input
+        type="email"
+        placeholder="Correo electrónico"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
       <button onClick={fetchHistory}>Ver Historial</button>
+
       <ul>
         {cuts.map(cut => (
-          <li key={cut.id}>
-            <img src={cut.image_url} alt="Corte" width="100" />
+          <li key={cut._id}>
+            <img src={`data:image/jpeg;base64,${cut.image_base64}`} alt="Corte" width="150" />
             <p>{cut.description}</p>
-            <p>{cut.date_time}</p>
+            <p>{new Date(cut.createdAt).toLocaleString()}</p>
           </li>
         ))}
       </ul>

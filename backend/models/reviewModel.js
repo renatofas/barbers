@@ -1,19 +1,24 @@
+const mongoose = require('./mongo');
 
-const db = require('./db');
+const reviewSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  message: { type: String, required: true }
+}, { timestamps: { createdAt: true, updatedAt: false } });
 
-// Obtener todas las reseñas
+const Review = mongoose.model('Review', reviewSchema);
+
+// Obtener todas las reseñas, ordenadas por creación descendente
 async function getAllReviews() {
-  const [rows] = await db.query('SELECT * FROM reviews ORDER BY created_at DESC');
-  return rows;
+  return await Review.find().sort({ createdAt: -1 });
 }
 
 // Crear una nueva reseña
 async function createReview(name, email, rating, message) {
-  const [result] = await db.query(
-    'INSERT INTO reviews (name, email, rating, message) VALUES (?, ?, ?, ?)',
-    [name, email, rating, message]
-  );
-  return result.insertId;
+  const review = new Review({ name, email, rating, message });
+  await review.save();
+  return review._id;
 }
 
 module.exports = {

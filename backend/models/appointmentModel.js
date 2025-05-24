@@ -1,18 +1,28 @@
-const db = require('./db');
+const mongoose = require('./mongo');
 
+const appointmentSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  dateTime: { type: Date, required: true },
+  cutOption: { type: String, required: true }
+}, { timestamps: true });
+
+const Appointment = mongoose.model('Appointment', appointmentSchema);
+
+// Crea una nueva cita
 async function createAppointment(userId, dateTime, cutOption) {
-  const [result] = await db.query(
-    'INSERT INTO appointments (user_id, date_time, cut_option) VALUES (?, ?, ?)',
-    [userId, dateTime, cutOption]
-  );
-  return result.insertId;
+  const appointment = new Appointment({ userId, dateTime, cutOption });
+  await appointment.save();
+  return appointment._id;
 }
 
+// Obtiene todas las citas con info del usuario
 async function getAppointments() {
-  const [rows] = await db.query(
-    'SELECT a.id, u.name, u.email, a.date_time, a.cut_option FROM appointments a JOIN users u ON a.user_id = u.id ORDER BY a.date_time'
-  );
-  return rows;
+  return await Appointment.find()
+    .populate('userId', 'name email') // Une con la colección users y trae name y email
+    .sort({ dateTime: 1 });
 }
 
-module.exports = { createAppointment, getAppointments };
+module.exports = {
+  createAppointment,
+  getAppointments
+};

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
@@ -29,14 +28,28 @@ function BookingCalendar({ selectedService, goBack }) {
     const fetchBookedTimes = async () => {
       try {
         const res = await axios.get('http://localhost:3001/api/appointments');
-        const times = res.data
-          .filter(a => a.date_time.startsWith(formattedDate))
-          .map(a => {
-            const date = new Date(a.date_time);
-            const h = String(date.getHours()).padStart(2, '0');
-            const m = String(date.getMinutes()).padStart(2, '0');
-            return `${h}:${m}`;
-          });
+        const times = [];
+
+        res.data.forEach(a => {
+          const aDate = new Date(a.date_time);
+          const aDateString = aDate.toISOString().split('T')[0];
+
+          if (aDateString === formattedDate) {
+            const h = aDate.getHours();
+            const m = aDate.getMinutes();
+
+            const start = h + m / 60;
+            const duration = selectedService.durationHours || 1;
+
+            for (let i = 0; i < duration; i++) {
+              const blockedHour = start + i;
+              const hourStr = String(Math.floor(blockedHour)).padStart(2, '0');
+              const minuteStr = String(Math.round((blockedHour % 1) * 60)).padStart(2, '0');
+              times.push(`${hourStr}:${minuteStr}`);
+            }
+          }
+        });
+
         setBookedTimes(times);
       } catch (err) {
         console.error('Error al obtener citas', err);
@@ -44,7 +57,7 @@ function BookingCalendar({ selectedService, goBack }) {
     };
 
     fetchBookedTimes();
-  }, [formattedDate]);
+  }, [formattedDate, selectedService]);
 
   const handleSubmit = async e => {
     e.preventDefault();
