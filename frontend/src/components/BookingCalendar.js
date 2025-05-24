@@ -31,13 +31,13 @@ function BookingCalendar({ selectedService, goBack }) {
         const times = [];
 
         res.data.forEach(a => {
-          const aDate = new Date(a.date_time);
-          const aDateString = aDate.toISOString().split('T')[0];
+          const utcDate = new Date(a.date_time);
+          const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
+          const localDateString = localDate.toISOString().split('T')[0];
 
-          if (aDateString === formattedDate) {
-            const h = aDate.getHours();
-            const m = aDate.getMinutes();
-
+          if (localDateString === formattedDate) {
+            const h = localDate.getHours();
+            const m = localDate.getMinutes();
             const start = h + m / 60;
             const duration = selectedService.durationHours || 1;
 
@@ -64,9 +64,15 @@ function BookingCalendar({ selectedService, goBack }) {
     try {
       await axios.post('http://localhost:3001/api/auth/register', form);
 
+      const [hour, minute] = selectedTime.split(':');
+      const localDate = new Date(selectedDate);
+      localDate.setHours(Number(hour), Number(minute), 0, 0);
+
+      const isoDateTime = localDate.toISOString(); // convertido a UTC automáticamente
+
       await axios.post('http://localhost:3001/api/appointments', {
         email: form.email,
-        dateTime: `${formattedDate}T${selectedTime}`,
+        dateTime: isoDateTime,
         cut_option: selectedService.name,
         durationHours: selectedService.durationHours || 1
       });
