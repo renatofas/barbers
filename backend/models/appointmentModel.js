@@ -1,3 +1,4 @@
+
 const mongoose = require('./mongo');
 
 const appointmentSchema = new mongoose.Schema({
@@ -8,21 +9,18 @@ const appointmentSchema = new mongoose.Schema({
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
-// Crea una nueva cita
 async function createAppointment(userId, dateTime, cutOption) {
   const appointment = new Appointment({ userId, dateTime, cutOption });
   await appointment.save();
   return appointment._id;
 }
 
-// Obtiene todas las citas con info del usuario
 async function getAppointments() {
-  return await Appointment.find()
-    .populate('userId', 'name email') // Une con la colección users y trae name y email
-    .sort({ dateTime: 1 });
+  return Appointment.find().populate('userId');
 }
 
 module.exports = {
+  Appointment,
   createAppointment,
   getAppointments
 };

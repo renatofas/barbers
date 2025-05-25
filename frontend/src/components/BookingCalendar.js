@@ -22,21 +22,25 @@ function BookingCalendar({ selectedService, goBack }) {
   const [selectedTime, setSelectedTime] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [bookedTimes, setBookedTimes] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
 
   const formattedDate = selectedDate.toISOString().split('T')[0];
+  const serviceDuration = selectedService.durationHours || 1;
 
   useEffect(() => {
-    const fetchBookedTimes = async () => {
+    const fetchAllAppointments = async () => {
       try {
         const res = await axios.get('http://localhost:3001/api/appointments');
+        setAllAppointments(res.data);
+
         const times = [];
-
         res.data.forEach(a => {
-          const utcDate = new Date(a.dateTime);
-          const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
-          const localDateString = localDate.toISOString().split('T')[0];
-
-          if (localDateString === formattedDate) {
+          const localDate = new Date(a.dateTime);
+          if (
+            localDate.getFullYear() === selectedDate.getFullYear() &&
+            localDate.getMonth() === selectedDate.getMonth() &&
+            localDate.getDate() === selectedDate.getDate()
+          ) {
             const h = localDate.getHours();
             const m = localDate.getMinutes();
             const start = h + m / 60;
@@ -51,14 +55,54 @@ function BookingCalendar({ selectedService, goBack }) {
           }
         });
 
+        console.log("📅 Fecha seleccionada:", formattedDate);
+        console.log("🔒 Horas bloqueadas (bookedTimes):", times);
         setBookedTimes(times);
       } catch (err) {
         console.error('Error al obtener citas', err);
       }
     };
 
-    fetchBookedTimes();
+    fetchAllAppointments();
   }, [formattedDate, selectedService]);
+
+  const availableSlots = availableTimes.filter((time, index, array) => {
+    const requiredSlots = array.slice(index, index + serviceDuration);
+    if (requiredSlots.length < serviceDuration) return false;
+
+    const anyTaken = requiredSlots.some(t => bookedTimes.includes(t));
+    if (anyTaken) return false;
+
+    const [hour, minute] = time.split(':');
+    const slotDate = new Date(selectedDate);
+    slotDate.setHours(Number(hour), Number(minute), 0, 0);
+
+    if (slotDate <= new Date()) return false;
+
+    return true;
+  });
+
+  const dayClassName = date => {
+    const dayISO = date.toISOString().split('T')[0];
+    const isPast = date.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+    if (isPast) return 'past-day';
+
+    const appointmentsOfDay = allAppointments.filter(a => {
+      const d = new Date(a.dateTime);
+      const localDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      return localDate.toISOString().split('T')[0] === dayISO;
+    });
+
+    const bookedSlots = appointmentsOfDay.map(a => {
+      const d = new Date(a.dateTime);
+      const h = String(d.getHours()).padStart(2, '0');
+      const m = String(d.getMinutes()).padStart(2, '0');
+      return `${h}:${m}`;
+    });
+
+    const hasAvailable = availableTimes.some(time => !bookedSlots.includes(time));
+    return hasAvailable ? '' : 'no-availability';
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -75,7 +119,7 @@ function BookingCalendar({ selectedService, goBack }) {
         email: form.email,
         dateTime: isoDateTime,
         cut_option: selectedService.name,
-        durationHours: selectedService.durationHours || 1
+        durationHours: serviceDuration
       });
 
       alert('Cita agendada con éxito');
@@ -91,41 +135,7 @@ function BookingCalendar({ selectedService, goBack }) {
     }
   };
 
-  const today = new Date();
-  const isToday = selectedDate.toDateString() === today.toDateString();
-
-  const dayClassName = date => {
-    const today = new Date();
-    const dayISO = date.toISOString().split('T')[0];
-
-    if (date.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0)) {
-      return 'past-day';
-    }
-
-    const hasAvailable = availableTimes.some(time => {
-      const slot = new Date(`${dayISO}T${time}`);
-      return !bookedTimes.includes(time) && slot > new Date();
-    });
-
-    return hasAvailable ? '' : 'no-availability';
-  };
-
-  const serviceDuration = selectedService.durationHours || 1;
-
-  const availableSlots = availableTimes.filter((time, index, array) => {
-    const requiredSlots = array.slice(index, index + serviceDuration);
-    if (requiredSlots.length < serviceDuration) return false;
-
-    const anyTaken = requiredSlots.some(t => bookedTimes.includes(t));
-    if (anyTaken) return false;
-
-    if (isToday) {
-      const slotTime = new Date(`${formattedDate}T${time}`);
-      if (slotTime <= new Date()) return false;
-    }
-
-    return true;
-  });
+  console.log("✅ availableSlots calculados:", availableSlots);
 
   return (
     <div className="booking-layout">
@@ -142,8 +152,8 @@ function BookingCalendar({ selectedService, goBack }) {
             setSelectedTime('');
           }}
           inline
-          dayClassName={dayClassName}
           minDate={new Date()}
+          dayClassName={dayClassName}
         />
         <div className="timezone-label">Zona horaria: Chile – Santiago</div>
       </div>
