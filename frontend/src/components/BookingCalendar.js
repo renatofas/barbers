@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
@@ -31,7 +32,7 @@ function BookingCalendar({ selectedService, goBack }) {
         const times = [];
 
         res.data.forEach(a => {
-          const utcDate = new Date(a.date_time);
+          const utcDate = new Date(a.dateTime);
           const localDate = new Date(utcDate.getTime() - utcDate.getTimezoneOffset() * 60000);
           const localDateString = localDate.toISOString().split('T')[0];
 
@@ -39,7 +40,7 @@ function BookingCalendar({ selectedService, goBack }) {
             const h = localDate.getHours();
             const m = localDate.getMinutes();
             const start = h + m / 60;
-            const duration = selectedService.durationHours || 1;
+            const duration = a.durationHours || 1;
 
             for (let i = 0; i < duration; i++) {
               const blockedHour = start + i;
@@ -68,7 +69,7 @@ function BookingCalendar({ selectedService, goBack }) {
       const localDate = new Date(selectedDate);
       localDate.setHours(Number(hour), Number(minute), 0, 0);
 
-      const isoDateTime = localDate.toISOString(); // convertido a UTC automáticamente
+      const isoDateTime = localDate.toISOString();
 
       await axios.post('http://localhost:3001/api/appointments', {
         email: form.email,
