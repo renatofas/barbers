@@ -24,7 +24,6 @@ function BookingCalendar({ selectedService, goBack }) {
   const [bookedTimes, setBookedTimes] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
 
-  const formattedDate = selectedDate.toISOString().split('T')[0];
   const serviceDuration = selectedService.durationHours || 1;
 
   useEffect(() => {
@@ -55,8 +54,6 @@ function BookingCalendar({ selectedService, goBack }) {
           }
         });
 
-        console.log("📅 Fecha seleccionada:", formattedDate);
-        console.log("🔒 Horas bloqueadas (bookedTimes):", times);
         setBookedTimes(times);
       } catch (err) {
         console.error('Error al obtener citas', err);
@@ -64,7 +61,46 @@ function BookingCalendar({ selectedService, goBack }) {
     };
 
     fetchAllAppointments();
-  }, [formattedDate, selectedService]);
+  }, [selectedDate, selectedService]);
+
+  useEffect(() => {
+    const today = new Date();
+    const bookedCount = bookedTimes.length;
+
+    if (bookedCount === availableTimes.length) {
+      let tryDate = new Date(selectedDate);
+      for (let i = 1; i <= 30; i++) {
+        tryDate.setDate(selectedDate.getDate() + i);
+
+        const appointmentsThatDay = allAppointments.filter(a => {
+          const d = new Date(a.dateTime);
+          const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+          return (
+            local.getFullYear() === tryDate.getFullYear() &&
+            local.getMonth() === tryDate.getMonth() &&
+            local.getDate() === tryDate.getDate()
+          );
+        });
+
+        const bookedSlots = appointmentsThatDay.map(a => {
+          const d = new Date(a.dateTime);
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        });
+
+        const hasFree = availableTimes.some(t => {
+          const [h, m] = t.split(':');
+          const tDate = new Date(tryDate);
+          tDate.setHours(Number(h), Number(m), 0, 0);
+          return !bookedSlots.includes(t) && tDate > new Date();
+        });
+
+        if (hasFree) {
+          setSelectedDate(new Date(tryDate));
+          break;
+        }
+      }
+    }
+  }, [bookedTimes, allAppointments]);
 
   const availableSlots = availableTimes.filter((time, index, array) => {
     const requiredSlots = array.slice(index, index + serviceDuration);
@@ -83,9 +119,11 @@ function BookingCalendar({ selectedService, goBack }) {
   });
 
   const dayClassName = date => {
-    const dayISO = date.toISOString().split('T')[0];
-    const isPast = date.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0);
+    const today = new Date();
+    const isPast = date.setHours(0, 0, 0, 0) < today.setHours(0, 0, 0, 0);
     if (isPast) return 'past-day';
+
+    const dayISO = date.toISOString().split('T')[0];
 
     const appointmentsOfDay = allAppointments.filter(a => {
       const d = new Date(a.dateTime);
@@ -100,7 +138,14 @@ function BookingCalendar({ selectedService, goBack }) {
       return `${h}:${m}`;
     });
 
-    const hasAvailable = availableTimes.some(time => !bookedSlots.includes(time));
+    const hasAvailable = availableTimes.some(time => {
+      if (bookedSlots.includes(time)) return false;
+      const [hour, minute] = time.split(':');
+      const timeDate = new Date(date);
+      timeDate.setHours(Number(hour), Number(minute), 0, 0);
+      return timeDate > new Date();
+    });
+
     return hasAvailable ? '' : 'no-availability';
   };
 
@@ -135,7 +180,13 @@ function BookingCalendar({ selectedService, goBack }) {
     }
   };
 
-  console.log("✅ availableSlots calculados:", availableSlots);
+  const excludedDates = [];
+  const today = new Date();
+  if (bookedTimes.length === availableTimes.length) {
+    const todayCopy = new Date(today);
+    todayCopy.setHours(0, 0, 0, 0);
+    excludedDates.push(todayCopy);
+  }
 
   return (
     <div className="booking-layout">
@@ -154,6 +205,7 @@ function BookingCalendar({ selectedService, goBack }) {
           inline
           minDate={new Date()}
           dayClassName={dayClassName}
+          excludeDates={excludedDates}
         />
         <div className="timezone-label">Zona horaria: Chile – Santiago</div>
       </div>
