@@ -16,9 +16,13 @@ async function getAllReviews() {
 
 // Crear una nueva reseña
 async function createReview(name, email, rating, message) {
+  const existing = await Review.findOne({ email });
+  if (existing) throw new Error('Ya existe una reseña con este correo.');
+
   const review = new Review({ name, email, rating, message });
   await review.save();
   return review._id;
+
 }
 
 module.exports = {

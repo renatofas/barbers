@@ -91,3 +91,161 @@ button:disabled {
   background-color: #444;
   cursor: not-allowed;
 }
+
+
+/* General layout */
+.app-container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  color: white;
+  background-color: #0d0d0d;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.main-header h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.emoji {
+  font-size: 1.5rem;
+}
+
+main section {
+  margin-top: 2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background-color: #1a1a1a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.team-card, .phone, .policy-link {
+  font-size: 1.1rem;
+  padding-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.arrow {
+  font-weight: bold;
+}
+
+.policy-link {
+  color: #64b5f6;
+  text-decoration: none;
+}
+
+.policy-link:hover {
+  text-decoration: underline;
+}
+
+
+/* Logo */
+.barber-logo {
+  display: block;
+  margin: 0 auto 1rem;
+  width: 120px;
+  height: auto;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+/* Layout mejoras */
+.app-container {
+  max-width: 720px;
+  margin: auto;
+  padding: 20px;
+  color: white;
+  background-color: #0d0d0d;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.main-header h1 {
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+main > section {
+  margin-top: 2.5rem;
+  padding: 1.2rem;
+  border-radius: 14px;
+  background-color: #1a1a1a;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Servicio Hover (desde ServiceSelector) */
+.service-card {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  background-color: #1e1e1e;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  padding: 1rem;
+}
+.service-card:hover {
+  background-color: #2a2a2a;
+  transform: scale(1.02);
+  cursor: pointer;
+}
+
+.team-card, .phone, .policy-link {
+  font-size: 1.1rem;
+  padding-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.arrow {
+  font-weight: bold;
+}
+
+.policy-link {
+  color: #64b5f6;
+  text-decoration: none;
+}
+
+.policy-link:hover {
+  text-decoration: underline;
+}
+.contact-section {
+  padding: 1.2rem;
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+
+.contact-section h2 {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.contact-methods.refined {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ddd;
+  font-size: 0.95rem;
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid #333;
+  transition: color 0.2s ease;
+}
+
+.contact-link:hover {
+  color: #ffcc00;
+}

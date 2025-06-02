@@ -1,6 +1,7 @@
 
 import React from 'react';
-import './ServiceSelector.css'; // Usa el nuevo estilo similar a Setmore
+import './ServiceSelector.css'; // Estilo si aplica
+import './ServiceSelector.css';
 
 const services = [
   {
@@ -45,35 +46,27 @@ const services = [
   },
 ];
 
-
-function ServiceSelector({ onSelect }) {
+const ServiceSelector = ({ onSelect }) => {
   return (
-    <div className="service-container">
-      <h2>Selecciona un servicio</h2>
-      <div className="service-grid">
-        {services.map(service => (
-          <div
-            key={service.name}
-            className="service-card"
-            onClick={() => onSelect(service)}
-          >
+    <div className="service-list">
+      {services.map((service, index) => (
+        <div
+          key={index}
+          className="service-card"
+          onClick={() => onSelect(service)}
+        >
+          <div className="service-image">
             <img src={service.image} alt={service.name} />
-            <div className="service-info">
-              <h3>{service.name}</h3>
-              <div className="service-info-details">
-                <span>{service.duration}</span>
-                <span>·</span>
-                <span>Detalles</span>
-                <span>·</span>
-                <span>{service.price}</span>
-              </div>
-            </div>
-            <div className="arrow">{'>'}</div>
           </div>
-        ))}
-      </div>
+          <div className="service-info">
+            <strong>{service.name}</strong>
+            <p>{service.duration} • Detalles • {service.price}</p>
+          </div>
+          <div className="service-arrow">➤</div>
+        </div>
+      ))}
     </div>
   );
-}
+};
 
 export default ServiceSelector;

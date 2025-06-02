@@ -1,0 +1,52 @@
+
+.policy-banner {
+  background-color: #2a2a2a;
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.policy-content {
+  flex: 1;
+}
+
+.policy-content strong {
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.policy-content p {
+  margin: 0.5rem 0;
+  color: #ccc;
+}
+
+.policy-sub {
+  background-color: #1e1e1e;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: #ffcc00;
+}
+
+.policy-close {
+  background: transparent;
+  border: 1.5px solid #ccc;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.policy-close:hover {
+  background-color: #444;
+}

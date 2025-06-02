@@ -26,7 +26,7 @@ const submitReview = async (req, res) => {
     res.status(201).json({ message: 'Reseña registrada' });
   } catch (err) {
     console.error('Error al guardar reseña:', err);
-    res.status(500).json({ message: 'Error al guardar reseña' });
+    res.status(500).json({ message: 'Ya existe una reseña con este correo.' });
   }
 };
 
