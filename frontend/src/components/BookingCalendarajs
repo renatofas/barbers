@@ -149,31 +149,7 @@ function BookingCalendar({ selectedService, goBack }) {
     return hasAvailable ? '' : 'no-availability';
   };
 
-  
-const validarTelefono = () => {
-  const { countryCode, phone } = form;
-
-  if (countryCode === '+56' && !/^[1-9][0-9]{8}$/.test(phone)) {
-    alert('El número en Chile debe tener 9 dígitos y no comenzar con 0');
-    return false;
-  }
-
-  if (countryCode === '+54' && !/^[1-9][0-9]{9}$/.test(phone)) {
-    alert('El número en Argentina debe tener 10 dígitos');
-    return false;
-  }
-
-  if (countryCode === '+57' && !/^[1-9][0-9]{9}$/.test(phone)) {
-    alert('El número en Colombia debe tener 10 dígitos');
-    return false;
-  }
-
-  return true;
-};
-
-
   const handleSubmit = async e => {
-    if (!validarTelefono()) return;
     e.preventDefault();
     try {
       const fullPhone = form.countryCode + form.phone;
@@ -285,11 +261,8 @@ const validarTelefono = () => {
                     onChange={(e) => setForm({ ...form, countryCode: e.target.value })}
                     required
                   >
-                    <option value="+56">🇨🇱 +56</option>
-                    <option value="+54">🇦🇷 +54</option>
-                    <option value="+57">🇨🇴 +57</option>
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+34">🇪🇸 +34</option>
+                    <option value="+56">+56 (CL)</option>
+                    <option value="+54">+54 (AR)</option>
                   </select>
                 </div>
                 <input

@@ -247,3 +247,47 @@ body {
   opacity: 0.5;
 }
 
+.phone-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.phone-input select {
+  height: 35px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #1c1c1c;
+  color: white;
+  font-size: 14px;
+}
+
+.phone-input input[type="tel"] {
+  flex: 1;
+  height: 35px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #1c1c1c;
+  color: white;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+
+.phone-country select {
+  height: 35px;
+  padding: 5px 3px;
+  font-size: 16px;
+  color: #000;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+}
+.phone-input select:focus,
+.phone-input input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
