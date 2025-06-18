@@ -49,5 +49,19 @@ const listAppointments = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener citas' });
   }
 };
+const updateAppointment = async (req, res) => {
+  const { id } = req.params;
+  const { description, fotoPerfilCliente } = req.body;
 
-module.exports = { scheduleAppointment, listAppointments };
+  try {
+    const updated = await Appointment.findByIdAndUpdate(
+      id,
+      { description, fotoPerfilCliente },
+      { new: true }
+    );
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar cita', error });
+  }
+};
+module.exports = { scheduleAppointment, listAppointments, updateAppointment };

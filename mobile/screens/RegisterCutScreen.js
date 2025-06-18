@@ -1,65 +1,135 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, Image, StyleSheet, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
+import uploadToCloudinary from '../utils/uploadToCloudinary';
+import { useRoute } from '@react-navigation/native';
 
-const API = process.env.EXPO_PUBLIC_API || 'http://localhost:3001';
+export default function RegisterCutScreen() {
+  const route = useRoute();
+  const { appointmentId } = route.params;
 
-export default function RegisterCutScreen({ route, navigation }) {
-  const { appointment } = route.params;
   const [description, setDescription] = useState('');
-  const [image, setImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.5,
-      base64: true,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0]);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!description || !image) {
-      Alert.alert('Faltan datos', 'Debes ingresar descripción y seleccionar una imagen.');
-      return;
-    }
+  useEffect(() => {
+  const loadData = async () => {
     try {
-      await axios.post(`${API}/api/haircuts`, {
-        email: appointment.email,
-        image: image.base64,
-        description
-      });
-      Alert.alert('Éxito', 'Corte registrado correctamente');
-      navigation.goBack();
+      const appointmentRes = await fetch(`http://localhost:3001/api/appointments/${appointmentId}`);
+      const appointment = await appointmentRes.json();
+      setUserId(appointment.userId);
+
+      const userRes = await fetch(`http://localhost:3001/api/users/${appointment.userId}`);
+      const user = await userRes.json();
+      if (user.fotoPerfilCliente) setImageUrl(user.fotoPerfilCliente);
+      if (user.description) setDescription(user.description);
     } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'No se pudo registrar el corte');
+      console.error('Error al cargar datos:', err);
+      Alert.alert('Error', 'No se pudo cargar la información del cliente.');
     }
   };
+
+  loadData();
+}, [appointmentId]);
+
+  const pickImageAndUpload = async () => {
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        base64: true,
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!result.cancelled) {
+        setLoading(true);
+        const uploadResult = await uploadToCloudinary(result.base64);
+        setImageUrl(uploadResult.secure_url);
+      }
+    } catch (err) {
+      console.error('Error al subir la imagen:', err);
+      Alert.alert('Error', 'No se pudo subir la imagen.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+  try {
+    const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fotoPerfilCliente: imageUrl,
+        description: description
+      })
+    });
+
+    if (res.ok) {
+      Alert.alert('Guardado', 'La información del cliente fue actualizada.');
+    } else {
+      throw new Error('Error al actualizar el usuario');
+    }
+  } catch (err) {
+    console.error('Error al guardar en usuario:', err);
+    Alert.alert('Error', 'No se pudo guardar la información del cliente.');
+  }
+};
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registrar corte para {appointment.name}</Text>
+      <Text style={styles.label}>Foto del cliente:</Text>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.image} />
+      ) : (
+        <Text style={styles.placeholder}>No hay imagen subida</Text>
+      )}
+      <Button title="Subir nueva foto" onPress={pickImageAndUpload} disabled={loading} />
+
+      <Text style={styles.label}>Descripción del corte:</Text>
       <TextInput
-        placeholder="Descripción del corte"
+        style={styles.textInput}
+        placeholder="Ej: Corte degradado + barba"
         value={description}
         onChangeText={setDescription}
-        style={styles.input}
         multiline
       />
-      <Button title="Seleccionar foto" onPress={pickImage} />
-      {image && <Image source={{ uri: image.uri }} style={styles.preview} />}
-      <Button title="Guardar" onPress={handleSubmit} />
+
+      <Button title="Guardar cambios" onPress={handleSave} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 10, marginBottom: 10, minHeight: 60 },
-  preview: { width: '100%', height: 200, marginVertical: 10, borderRadius: 10 }
+  container: {
+    padding: 16,
+    gap: 16
+  },
+  label: {
+    fontWeight: 'bold'
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 16,
+    alignSelf: 'center'
+  },
+  placeholder: {
+    textAlign: 'center',
+    marginBottom: 8,
+    fontStyle: 'italic',
+    color: '#888'
+  },
+  textInput: {
+    height: 100,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    textAlignVertical: 'top',
+    borderRadius: 8
+  }
 });
+
+
+
